@@ -56,6 +56,7 @@ const Login = () => {
           } else {
             Cookies.set("login", "true");
           }
+          secureLocalStorage.setItem("access_token", data.access_token);
           secureLocalStorage.setItem("refresh_token", data.refresh_token);
 
           toast.success("Signed in");

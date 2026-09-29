@@ -14,7 +14,8 @@ const axiosCustom = axios.create({
 axiosCustom.interceptors.request.use(
   (config) => {
     // Check hệ thống có token hay không và cập nhật Authorization header nếu có
-    const token = secureLocalStorage.getItem("refresh_token");
+    // API gọi bằng access token; refresh token chỉ gửi tới /refresh-token
+    const token = secureLocalStorage.getItem("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,9 +50,10 @@ axiosCustom.interceptors.response.use(
         });
 
         // Cập nhật token mới và gửi lại request gốc với token mới
-        const newToken = response.data.refresh_token;
-        secureLocalStorage.setItem("refresh_token", newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        const newAccessToken = response.data.access_token;
+        secureLocalStorage.setItem("access_token", newAccessToken);
+        secureLocalStorage.setItem("refresh_token", response.data.refresh_token);
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return axios(originalRequest);
       } catch (error) {
         // Nếu không thể làm mới token, chuyển hướng đến trang đăng nhập hoặc xử lý lỗi khác
