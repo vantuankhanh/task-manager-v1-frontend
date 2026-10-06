@@ -1,11 +1,6 @@
-import { useMemo } from "react";
-import secureLocalStorage from "react-secure-storage";
-import { IRefreshTokenDecodeModel } from "../models/RefreshTokenDecodeModel";
-import { jwtDecode } from "jwt-decode";
+import { useAuthentication } from "./use-authentication";
 
+/** 0 = user, 1 = admin. Nobody signed in counts as a user. */
 export const useRole = () => {
-  const token = secureLocalStorage.getItem("refresh_token");
-  const data: IRefreshTokenDecodeModel = jwtDecode(token as string);
-
-  return useMemo(() => data.role, [data]);
+  return useAuthentication().currentUser?.role ?? 0;
 };

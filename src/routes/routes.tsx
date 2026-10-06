@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import { Navigate, Outlet, useRoutes } from "react-router-dom";
 import LoginPrivateRoute from "../components/LoginPrivateRoute";
+import { useAuthentication } from "../hooks/use-authentication";
 import LayoutFull from "../layout/full-page/layout-full-page";
 import LayoutMain from "../layout/main/layout-main";
 
@@ -8,6 +9,8 @@ import LayoutMain from "../layout/main/layout-main";
 
 const AccessDeniedPage = lazy(() => import("../pages/auth/Access"));
 const ErrorPage = lazy(() => import("../pages/auth/Error"));
+const IamSignIn = lazy(() => import("../pages/auth/IamSignIn"));
+const IamSignInFailed = lazy(() => import("../pages/auth/IamSignInFailed"));
 const Login = lazy(() => import("../pages/auth/Login"));
 const Logout = lazy(() => import("../pages/auth/Logout"));
 const NotFound = lazy(() => import("../pages/auth/NotFound"));
@@ -23,6 +26,23 @@ const Dashboard = lazy(() => import("../pages/dashboard"));
 /* ------------------------------------------------------------------ */
 
 const Router = () => {
+  const { supportsLocalAccountManagement } = useAuthentication();
+
+  // legacy: the email and password form and the signup page of this application.
+  // iam: one button to VTK IAM, where accounts are created too. The legacy pages
+  // are separate chunks, so iam mode never loads their storage code.
+  const signInRoutes = supportsLocalAccountManagement
+    ? [
+        { path: "login", element: <Login /> },
+        { path: "signup", element: <Signup /> },
+        { path: "access", element: <AccessDeniedPage /> },
+      ]
+    : [
+        { path: "login", element: <IamSignIn /> },
+        // Where the backend sends the browser when a sign-in at VTK IAM failed
+        { path: "access", element: <IamSignInFailed /> },
+      ];
+
   const routes = useRoutes([
     {
       element: (
@@ -47,10 +67,8 @@ const Router = () => {
         </LayoutFull>
       ),
       children: [
-        { path: "login", element: <Login /> },
+        ...signInRoutes,
         { path: "logout", element: <Logout /> },
-        { path: "signup", element: <Signup /> },
-        { path: "access", element: <AccessDeniedPage /> },
         { path: "error", element: <ErrorPage /> },
       ],
     },

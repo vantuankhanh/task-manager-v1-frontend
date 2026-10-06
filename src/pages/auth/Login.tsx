@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
 import { InputText } from "primereact/inputtext";
@@ -6,9 +5,8 @@ import { Password } from "primereact/password";
 import { classNames } from "primereact/utils";
 import { FormEvent, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import secureLocalStorage from "react-secure-storage";
 import { toast } from "react-toastify";
-import { login } from "../../services/login";
+import { signInWithPassword } from "../../auth/legacyAuthenticationProvider";
 import { setLoading } from "../../store/reducer/reducer";
 import { useAppDispatch } from "../../store/store";
 import { checkLoggedStorage } from "../../utils/checkLoggedStorage";
@@ -45,20 +43,10 @@ const Login = () => {
 
       try {
         dispatch(setLoading(true));
-        const data = await login(email, password);
+        const signedIn = await signInWithPassword(email, password, checked);
         dispatch(setLoading(false));
 
-        if (data) {
-          if (checked) {
-            Cookies.set("login", "true", {
-              expires: 7 + 7 / 24,
-            });
-          } else {
-            Cookies.set("login", "true");
-          }
-          secureLocalStorage.setItem("access_token", data.access_token);
-          secureLocalStorage.setItem("refresh_token", data.refresh_token);
-
+        if (signedIn) {
           toast.success("Signed in");
           nav("/");
         } else {

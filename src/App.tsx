@@ -1,4 +1,5 @@
 import { ToastContainer } from "react-toastify";
+import AuthenticationGate from "./components/AuthenticationGate";
 import Loading from "./components/Loading/Loading";
 import useScrollToTop from "./hooks/use-scroll-to-top";
 import Router from "./routes/routes";
@@ -8,7 +9,9 @@ const App = () => {
 
   return (
     <>
-      <Router />
+      <AuthenticationGate>
+        <Router />
+      </AuthenticationGate>
       <ToastContainer
         position="top-right"
         autoClose={2000}

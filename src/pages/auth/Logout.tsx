@@ -1,13 +1,28 @@
-import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
-import secureLocalStorage from "react-secure-storage";
+import { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
+import { browserNavigation } from "../../auth/browserNavigation";
+import LoadingLazy from "../../components/Loading/LoadingLazy";
+import { useAuthentication } from "../../hooks/use-authentication";
 
 const Logout = () => {
-  Cookies.remove("login");
-  secureLocalStorage.clear();
-  localStorage.clear();
+  const { signOut } = useAuthentication();
+  const signOutStarted = useRef(false);
 
-  return <Navigate to="/auth/login" state={{}} />;
+  useEffect(() => {
+    if (signOutStarted.current) {
+      return;
+    }
+    signOutStarted.current = true;
+
+    // legacy: clears the browser session and shows the login form.
+    // iam: the backend revokes the session, then the browser goes to the IAM sign-out.
+    signOut().catch(() => {
+      toast.error("Could not sign out. Please try again.");
+      browserNavigation.goToFrontendPath("/");
+    });
+  }, [signOut]);
+
+  return <LoadingLazy />;
 };
 
 export default Logout;

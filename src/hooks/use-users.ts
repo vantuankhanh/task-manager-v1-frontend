@@ -1,16 +1,14 @@
-import { jwtDecode } from "jwt-decode";
 import { useMemo } from "react";
-import secureLocalStorage from "react-secure-storage";
-import { IRefreshTokenDecodeModel } from "../models/RefreshTokenDecodeModel";
+import { useAuthentication } from "./use-authentication";
 
 export const useUser = () => {
-  const token = secureLocalStorage.getItem("refresh_token");
-  const data: IRefreshTokenDecodeModel = jwtDecode(token as string);
+  const { currentUser } = useAuthentication();
+
   return useMemo(
     () => ({
-      email: data.email,
-      name: data.name,
+      email: currentUser?.email ?? "",
+      name: currentUser?.name ?? "",
     }),
-    [data]
+    [currentUser]
   );
 };
