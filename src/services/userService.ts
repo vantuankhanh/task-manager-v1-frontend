@@ -1,3 +1,4 @@
+import { authentication } from "../auth/authentication";
 import { IUserModel } from "../models/UserModel";
 import { deleteAPI, getAPI, postAPI, putAPI } from "./apiFunction";
 
@@ -12,20 +13,32 @@ export const editUser = async (item: IUserModel) =>
     messageFail: "Updated user failed",
   });
 
+// Creating, deleting and changing the role of a user are legacy mode only:
+// in iam mode accounts, roles and access are managed in the VTK IAM console
+// (a user deleted here who still has a role there would come back at the
+// next sign-in).
 export const createUser = async (item: IUserModel) =>
-  await postAPI(import.meta.env.VITE_API_USER, item);
+  authentication.supportsLocalAccountManagement()
+    ? await postAPI(import.meta.env.VITE_API_USER, item)
+    : false;
 
 export const deleteUser = async (id: string) =>
-  await deleteAPI(
-    import.meta.env.VITE_API_USER,
-    { id },
-    {
-      messageSuccess: "Successfully deleted user",
-      messageFail: "Deleted user failed",
-    }
-  );
+  authentication.supportsLocalAccountManagement()
+    ? await deleteAPI(
+        import.meta.env.VITE_API_USER,
+        { id },
+        {
+          messageSuccess: "Successfully deleted user",
+          messageFail: "Deleted user failed",
+        }
+      )
+    : false;
 
 export const changeRoleUser = async (item: IUserModel) => {
+  if (!authentication.supportsLocalAccountManagement()) {
+    return false;
+  }
+
   const res = await putAPI(
     import.meta.env.VITE_API_USER + "/changerole",
     {

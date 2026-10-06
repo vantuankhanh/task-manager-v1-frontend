@@ -15,6 +15,7 @@ interface IDataViewHeaderProps {
   setSortOrder: React.Dispatch<React.SetStateAction<0 | 1 | -1 | null>>;
   setSortField: React.Dispatch<React.SetStateAction<string>>;
   onCreateClick: React.MouseEventHandler<HTMLButtonElement>;
+  canCreateUser: boolean;
 }
 
 const DataViewHeader = ({
@@ -25,6 +26,7 @@ const DataViewHeader = ({
   setSortOrder,
   setSortField,
   onCreateClick,
+  canCreateUser,
 }: IDataViewHeaderProps) => {
   const sortOptions = useMemo(
     () => [
@@ -102,7 +104,9 @@ const DataViewHeader = ({
         />
       </span>
 
-      <Button label="Create" icon="pi pi-user-plus" onClick={onCreateClick} />
+      {canCreateUser && (
+        <Button label="Create" icon="pi pi-user-plus" onClick={onCreateClick} />
+      )}
 
       <div className="hidden md:block">
         <DataViewLayoutOptions

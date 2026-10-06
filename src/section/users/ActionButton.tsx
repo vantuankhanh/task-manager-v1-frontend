@@ -5,6 +5,8 @@ interface IActionButton {
   onDeleteClick: React.MouseEventHandler<HTMLButtonElement>;
   role: number;
   onChangeRole: React.MouseEventHandler<HTMLButtonElement>;
+  canChangeRole: boolean;
+  canDeleteUser: boolean;
 }
 
 const ActionButton = ({
@@ -12,17 +14,21 @@ const ActionButton = ({
   onDeleteClick,
   role,
   onChangeRole,
+  canChangeRole,
+  canDeleteUser,
 }: IActionButton) => {
   return (
     <>
-      <Button
-        icon={role === 1 ? "pi pi-star-fill" : "pi pi-star"}
-        severity="success"
-        size="small"
-        tooltip="Change role"
-        tooltipOptions={{ position: "bottom" }}
-        onClick={onChangeRole}
-      />
+      {canChangeRole && (
+        <Button
+          icon={role === 1 ? "pi pi-star-fill" : "pi pi-star"}
+          severity="success"
+          size="small"
+          tooltip="Change role"
+          tooltipOptions={{ position: "bottom" }}
+          onClick={onChangeRole}
+        />
+      )}
       <Button
         icon="pi pi-user-edit"
         size="small"
@@ -30,14 +36,16 @@ const ActionButton = ({
         tooltipOptions={{ position: "bottom" }}
         onClick={onEditClick}
       />
-      <Button
-        icon="pi pi-trash"
-        severity="danger"
-        size="small"
-        tooltip="Delete"
-        tooltipOptions={{ position: "bottom" }}
-        onClick={onDeleteClick}
-      />
+      {canDeleteUser && (
+        <Button
+          icon="pi pi-trash"
+          severity="danger"
+          size="small"
+          tooltip="Delete"
+          tooltipOptions={{ position: "bottom" }}
+          onClick={onDeleteClick}
+        />
+      )}
     </>
   );
 };

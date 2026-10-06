@@ -8,6 +8,8 @@ interface IDataViewGridItemProps {
   onEditClick: MouseEventHandler<HTMLButtonElement>;
   onDeleteClick: MouseEventHandler<HTMLButtonElement>;
   onChangeRole: MouseEventHandler<HTMLButtonElement>;
+  canChangeRole: boolean;
+  canDeleteUser: boolean;
 }
 
 const DataViewGridItem = ({
@@ -15,6 +17,8 @@ const DataViewGridItem = ({
   onEditClick,
   onDeleteClick,
   onChangeRole,
+  canChangeRole,
+  canDeleteUser,
 }: IDataViewGridItemProps) => {
   return (
     <div className="col-12 lg:col-4 relative">
@@ -40,6 +44,8 @@ const DataViewGridItem = ({
               onDeleteClick={onDeleteClick}
               role={data.role!}
               onChangeRole={onChangeRole}
+              canChangeRole={canChangeRole}
+              canDeleteUser={canDeleteUser}
             />
           </div>
         </div>

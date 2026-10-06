@@ -7,6 +7,8 @@ interface IDataViewListItemProps {
   onEditClick: MouseEventHandler<HTMLButtonElement>;
   onDeleteClick: MouseEventHandler<HTMLButtonElement>;
   onChangeRole: MouseEventHandler<HTMLButtonElement>;
+  canChangeRole: boolean;
+  canDeleteUser: boolean;
 }
 
 const DataViewListItem = ({
@@ -14,6 +16,8 @@ const DataViewListItem = ({
   onEditClick,
   onDeleteClick,
   onChangeRole,
+  canChangeRole,
+  canDeleteUser,
 }: IDataViewListItemProps) => {
   return (
     <div className="col-12 hover:bg-gray-100">
@@ -40,6 +44,8 @@ const DataViewListItem = ({
             onDeleteClick={onDeleteClick}
             role={data.role!}
             onChangeRole={onChangeRole}
+            canChangeRole={canChangeRole}
+            canDeleteUser={canDeleteUser}
           />
         </div>
       </div>
