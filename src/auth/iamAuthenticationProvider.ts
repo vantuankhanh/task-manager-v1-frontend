@@ -287,17 +287,13 @@ export const createIamAuthenticationProvider = ({
     },
 
     signInWithAnotherAccount: async () => {
-      try {
-        // Through the IAM sign-out, so the IAM forgets the refused account.
-        await endSessionAndGoToRedirectUrl();
-      } catch (error) {
-        if (answeredUnauthorized(error)) {
-          // No session of this application to end: straight to the sign-in.
-          signIn("/");
-          return;
-        }
-        throw error;
-      }
+      // Straight to the IAM sign-in form: the account that signs in there
+      // replaces the refused one, without a sign-out page in between.
+      browserNavigation.goToExternalUrl(
+        authenticationEndpoints.iamSignInWithAnotherAccount(
+          addSignInAttemptMarker("/")
+        )
+      );
     },
   };
 };

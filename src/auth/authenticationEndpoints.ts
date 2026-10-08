@@ -10,6 +10,11 @@ export const authenticationEndpoints = {
   // iam mode
   iamSignIn: (returnToPath: string) =>
     `${apiBaseUrl()}/auth/login?returnTo=${encodeURIComponent(returnToPath)}`,
+  /** prompt=login: the IAM shows its sign-in form even to a browser it knows. */
+  iamSignInWithAnotherAccount: (returnToPath: string) =>
+    `${apiBaseUrl()}/auth/login?returnTo=${encodeURIComponent(
+      returnToPath
+    )}&prompt=login`,
   iamRefresh: () => `${apiBaseUrl()}/auth/refresh`,
   iamSignOut: () => `${apiBaseUrl()}/auth/logout`,
   iamCurrentUser: () => `${apiBaseUrl()}/me`,

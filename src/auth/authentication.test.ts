@@ -555,17 +555,10 @@ describe("iam mode", () => {
 
   describe("sign in with another account, after a refused sign-in", () => {
     /** Nobody is signed in to the application; the IAM may still know the refused account. */
-    const loadSignedOutIamAuthentication = async (signOutStatus: number) => {
+    const loadSignedOutIamAuthentication = async () => {
       const loaded = await loadAuthentication((request) => {
         if (request.path === "/auth/config")
           return { status: 200, data: { mode: "iam" } };
-        if (request.path === "/auth/logout" && signOutStatus === 200) {
-          return {
-            status: 200,
-            data: { redirectUrl: "https://auth.example.test/logout?state=2" },
-          };
-        }
-        if (request.path === "/auth/logout") return { status: signOutStatus };
         return { status: 401 };
       });
       await loaded.authentication.initialize();
@@ -576,28 +569,39 @@ describe("iam mode", () => {
       return loaded;
     };
 
-    it("ends the session through POST /api/auth/logout asking for JSON, then follows redirectUrl", async () => {
-      const { authentication, requestsTo, goToExternalUrl } =
-        await loadSignedOutIamAuthentication(200);
+    it("goes straight to the backend sign-in with prompt=login, back to the start page", async () => {
+      const { authentication, goToExternalUrl, goToFrontendPath } =
+        await loadSignedOutIamAuthentication();
 
       await authentication.signInWithAnotherAccount();
 
-      const signOutRequests = requestsTo("POST", "/auth/logout");
-      expect(signOutRequests).toHaveLength(1);
-      expect(signOutRequests[0].acceptHeader).toBe("application/json");
-      expect(signOutRequests[0].withCredentials).toBe(true);
       expect(goToExternalUrl.mock.calls).toEqual([
-        ["https://auth.example.test/logout?state=2"],
+        [
+          `${apiBaseUrl}/auth/login?returnTo=${encodeURIComponent(
+            "/?signInAttempt=1"
+          )}&prompt=login`,
+        ],
       ]);
+      expect(goToFrontendPath).not.toHaveBeenCalled();
     });
 
-    it("goes to the sign-in URL when the logout answers 401 because there is no application session", async () => {
-      const { authentication, requestsTo, goToExternalUrl, goToFrontendPath } =
-        await loadSignedOutIamAuthentication(401);
+    it("does not pass through the IAM sign-out: no request to POST /api/auth/logout", async () => {
+      const { authentication, receivedRequests, requestsTo } =
+        await loadSignedOutIamAuthentication();
+      const requestCountBefore = receivedRequests.length;
 
       await authentication.signInWithAnotherAccount();
 
-      expect(requestsTo("POST", "/auth/logout")).toHaveLength(1);
+      expect(requestsTo("POST", "/auth/logout")).toHaveLength(0);
+      expect(receivedRequests).toHaveLength(requestCountBefore);
+    });
+
+    it("leaves the normal sign-in without a prompt", async () => {
+      const { authentication, goToExternalUrl } =
+        await loadSignedOutIamAuthentication();
+
+      authentication.signIn("/");
+
       expect(goToExternalUrl.mock.calls).toEqual([
         [
           `${apiBaseUrl}/auth/login?returnTo=${encodeURIComponent(
@@ -605,19 +609,6 @@ describe("iam mode", () => {
           )}`,
         ],
       ]);
-      expect(goToFrontendPath).not.toHaveBeenCalled();
-    });
-
-    it("gives any other failure back to the page and goes nowhere", async () => {
-      const { authentication, goToExternalUrl, goToFrontendPath } =
-        await loadSignedOutIamAuthentication(503);
-
-      await expect(
-        authentication.signInWithAnotherAccount()
-      ).rejects.toMatchObject({ response: { status: 503 } });
-
-      expect(goToExternalUrl).not.toHaveBeenCalled();
-      expect(goToFrontendPath).not.toHaveBeenCalled();
     });
   });
 

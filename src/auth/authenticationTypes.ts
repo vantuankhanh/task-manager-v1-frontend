@@ -43,8 +43,8 @@ export interface IAuthenticationProvider {
   signIn: (returnToPath: string) => void;
   signOut: () => Promise<void>;
   /**
-   * For a person whose account was refused: ends the session at the identity
-   * provider too, so that another account can be chosen at the next sign-in.
+   * For a person whose account was refused: goes to a sign-in that asks for
+   * the account again instead of reusing the refused one.
    */
   signInWithAnotherAccount: () => Promise<void>;
 }
