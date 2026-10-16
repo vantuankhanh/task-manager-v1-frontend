@@ -14,8 +14,7 @@ const Logout = () => {
     }
     signOutStarted.current = true;
 
-    // legacy: clears the browser session and shows the login form.
-    // iam: the backend revokes the session, then the browser goes to the IAM sign-out.
+    // The backend revokes the session, then the browser goes to the IAM sign-out.
     signOut().catch(() => {
       toast.error("Could not sign out. Please try again.");
       browserNavigation.goToFrontendPath("/");

@@ -5,19 +5,11 @@ import ActionButton from "./ActionButton";
 interface IDataViewListItemProps {
   data: IUserModel;
   onEditClick: MouseEventHandler<HTMLButtonElement>;
-  onDeleteClick: MouseEventHandler<HTMLButtonElement>;
-  onChangeRole: MouseEventHandler<HTMLButtonElement>;
-  canChangeRole: boolean;
-  canDeleteUser: boolean;
 }
 
 const DataViewListItem = ({
   data,
   onEditClick,
-  onDeleteClick,
-  onChangeRole,
-  canChangeRole,
-  canDeleteUser,
 }: IDataViewListItemProps) => {
   return (
     <div className="col-12 hover:bg-gray-100">
@@ -39,14 +31,7 @@ const DataViewListItem = ({
         </div>
 
         <div className="flex flex-row gap-3 w-full md:w-auto justify-content-center align-items-center mt-3 md:mt-0">
-          <ActionButton
-            onEditClick={onEditClick}
-            onDeleteClick={onDeleteClick}
-            role={data.role!}
-            onChangeRole={onChangeRole}
-            canChangeRole={canChangeRole}
-            canDeleteUser={canDeleteUser}
-          />
+          <ActionButton onEditClick={onEditClick} />
         </div>
       </div>
     </div>

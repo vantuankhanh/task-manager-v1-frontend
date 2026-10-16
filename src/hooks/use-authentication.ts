@@ -10,12 +10,9 @@ export const useAuthentication = () => {
   return useMemo(
     () => ({
       status: authenticationState.status,
-      mode: authenticationState.mode,
       currentUser: authenticationState.currentUser,
       isSignedIn: authenticationState.currentUser !== null,
       isAdmin: authenticationState.currentUser?.role === 1,
-      supportsLocalAccountManagement:
-        authentication.supportsLocalAccountManagement(),
       signIn: authentication.signIn,
       signOut: authentication.signOut,
       signInWithAnotherAccount: authentication.signInWithAnotherAccount,

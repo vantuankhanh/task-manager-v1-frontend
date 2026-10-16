@@ -1,4 +1,3 @@
-import { Button } from "primereact/button";
 import { DataViewLayoutOptions } from "primereact/dataview";
 import { Dropdown, DropdownChangeEvent } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
@@ -14,8 +13,6 @@ interface IDataViewHeaderProps {
   >;
   setSortOrder: React.Dispatch<React.SetStateAction<0 | 1 | -1 | null>>;
   setSortField: React.Dispatch<React.SetStateAction<string>>;
-  onCreateClick: React.MouseEventHandler<HTMLButtonElement>;
-  canCreateUser: boolean;
 }
 
 const DataViewHeader = ({
@@ -25,8 +22,6 @@ const DataViewHeader = ({
   setLayout,
   setSortOrder,
   setSortField,
-  onCreateClick,
-  canCreateUser,
 }: IDataViewHeaderProps) => {
   const sortOptions = useMemo(
     () => [
@@ -103,10 +98,6 @@ const DataViewHeader = ({
           placeholder="Search by Name or Email"
         />
       </span>
-
-      {canCreateUser && (
-        <Button label="Create" icon="pi pi-user-plus" onClick={onCreateClick} />
-      )}
 
       <div className="hidden md:block">
         <DataViewLayoutOptions

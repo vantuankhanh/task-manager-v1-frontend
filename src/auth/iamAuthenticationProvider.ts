@@ -68,12 +68,13 @@ const isHttpUrl = (candidateUrl: unknown): candidateUrl is string => {
 };
 
 /**
- * What a legacy session left in this browser before the backend was switched
- * to iam: the tokens of react-secure-storage (its keys start with "@secure.")
- * and the "login" cookie. They are of no use in iam mode, so they do not stay
- * within reach of scripts. Done by hand: the legacy libraries are not loaded.
+ * What the sign-in this application did itself (removed in milestone M9 of
+ * VTK IAM) may have left in a browser that has not been here since: the
+ * tokens of react-secure-storage (its keys start with "@secure.") and the
+ * "login" cookie. They are of no use, so they do not stay within reach of
+ * scripts.
  */
-const removeLegacySessionLeftovers = () => {
+const removeOldSessionLeftovers = () => {
   try {
     Object.keys(window.localStorage)
       .filter((storageKey) => storageKey.startsWith("@secure."))
@@ -87,9 +88,9 @@ const removeLegacySessionLeftovers = () => {
 };
 
 /**
- * iam mode: the backend holds the tokens in httpOnly cookies of the API host.
- * This code never sees a token and writes nothing to localStorage,
- * sessionStorage or cookies (it only removes what legacy mode left there).
+ * The backend holds the tokens in httpOnly cookies of the API host. This code
+ * never sees a token and writes nothing to localStorage, sessionStorage or
+ * cookies (it only removes what the old sign-in left there).
  */
 export const createIamAuthenticationProvider = ({
   apiClient,
@@ -195,7 +196,7 @@ export const createIamAuthenticationProvider = ({
   const answeredUnauthorized = (error: unknown) =>
     axios.isAxiosError(error) && error.response?.status === 401;
 
-  removeLegacySessionLeftovers();
+  removeOldSessionLeftovers();
 
   apiClient.defaults.withCredentials = true;
 
@@ -246,9 +247,6 @@ export const createIamAuthenticationProvider = ({
   );
 
   return {
-    mode: "iam",
-    supportsLocalAccountManagement: false,
-
     loadCurrentUser: async () => {
       lastSessionRefreshOutcome = null;
       try {

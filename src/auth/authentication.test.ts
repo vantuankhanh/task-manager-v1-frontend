@@ -2,7 +2,6 @@ import type { InternalAxiosRequestConfig } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiBaseUrl = "https://api.task-manager.test/api";
-const legacyLibraryNames = ["react-secure-storage", "jwt-decode", "js-cookie"];
 
 interface IFakeAnswer {
   status: number;
@@ -23,28 +22,6 @@ type FakeBackend = (
 
 const toastError = vi.fn();
 
-/** A refresh token as the legacy backend signs it; only the payload matters here. */
-const createLegacyRefreshToken = (payload: object) => {
-  const encode = (value: object) =>
-    btoa(JSON.stringify(value))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  return `${encode({ alg: "HS256", typ: "JWT" })}.${encode(payload)}.signature`;
-};
-
-/** jsdom has no canvas, and react-secure-storage draws on one to derive its key. */
-const provideCanvasForSecureStorage = () => {
-  const drawingContext = new Proxy(
-    {},
-    { get: () => () => undefined, set: () => true }
-  );
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
-    drawingContext as never
-  );
-  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:,");
-};
-
 const isStillPending = async (promise: Promise<unknown>) => {
   const settled = promise.then(
     () => "settled",
@@ -63,7 +40,6 @@ const isStillPending = async (promise: Promise<unknown>) => {
 const loadAuthentication = async (fakeBackend: FakeBackend) => {
   vi.resetModules();
   vi.stubEnv("VITE_BASE_URL", apiBaseUrl);
-  vi.stubEnv("VITE_API_LOGIN", "/login");
   vi.stubEnv("VITE_API_USER", "/user");
   vi.doMock("react-toastify", () => ({
     toast: { error: toastError, success: vi.fn() },
@@ -137,7 +113,6 @@ const signedInAdmin = {
 };
 
 beforeEach(() => {
-  provideCanvasForSecureStorage();
   toastError.mockClear();
   localStorage.clear();
   sessionStorage.clear();
@@ -150,18 +125,15 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  legacyLibraryNames.forEach((libraryName) => vi.doUnmock(libraryName));
   vi.doUnmock("react-toastify");
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
-describe("mode selection from GET /api/auth/config", () => {
-  it("uses iam mode and the user of GET /api/me when the backend says iam", async () => {
+describe("page load", () => {
+  it("asks GET /api/me once, whoever calls initialize", async () => {
     const { authentication, requestsTo } = await loadAuthentication(
       (request) => {
-        if (request.path === "/auth/config")
-          return { status: 200, data: { mode: "iam" } };
         if (request.path === "/me") return { status: 200, data: signedInAdmin };
         return { status: 404 };
       }
@@ -175,63 +147,24 @@ describe("mode selection from GET /api/auth/config", () => {
 
     expect(authentication.getState()).toEqual({
       status: "ready",
-      mode: "iam",
       currentUser: signedInAdmin,
     });
     expect(authentication.isAdmin()).toBe(true);
-    expect(authentication.supportsLocalAccountManagement()).toBe(false);
-    expect(requestsTo("GET", "/auth/config")).toHaveLength(1);
     expect(requestsTo("GET", "/me")).toHaveLength(1);
+    expect(requestsTo("GET", "/auth/config")).toHaveLength(0);
   });
 
-  it("uses legacy mode when the backend says legacy, and never asks for /api/me", async () => {
-    const { authentication, requestsTo } = await loadAuthentication(
-      (request) =>
-        request.path === "/auth/config"
-          ? { status: 200, data: { mode: "legacy" } }
-          : { status: 404 }
-    );
-
-    await authentication.initialize();
-
-    expect(authentication.getState()).toEqual({
-      status: "ready",
-      mode: "legacy",
-      currentUser: null,
-    });
-    expect(authentication.supportsLocalAccountManagement()).toBe(true);
-    expect(requestsTo("GET", "/me")).toHaveLength(0);
-  });
-
-  it("treats a backend without the route (404) as a legacy backend", async () => {
-    const { authentication } = await loadAuthentication(() => ({
-      status: 404,
-    }));
-
-    await authentication.initialize();
-
-    expect(authentication.getState().mode).toBe("legacy");
-  });
-
-  it("reports unavailable, without guessing a mode, on a server error or an unknown mode", async () => {
+  it("reports unavailable on a server error", async () => {
     const serverError = await loadAuthentication(() => ({ status: 500 }));
     await serverError.authentication.initialize();
     expect(serverError.authentication.getState()).toEqual({
       status: "unavailable",
-      mode: null,
       currentUser: null,
     });
-
-    const unknownMode = await loadAuthentication(() => ({
-      status: 200,
-      data: { mode: "something-else" },
-    }));
-    await unknownMode.authentication.initialize();
-    expect(unknownMode.authentication.getState().status).toBe("unavailable");
   });
 });
 
-describe("iam mode", () => {
+describe("sign-in through VTK IAM", () => {
   /** A backend whose access cookie has expired until POST /auth/refresh is called. */
   const createIamBackend = (options: {
     refreshStatus: number;
@@ -245,8 +178,6 @@ describe("iam mode", () => {
     });
 
     const fakeBackend: FakeBackend = async (request) => {
-      if (request.path === "/auth/config")
-        return { status: 200, data: { mode: "iam" } };
       if (request.path === "/auth/refresh") {
         await refreshMayAnswer;
         if (
@@ -374,7 +305,6 @@ describe("iam mode", () => {
 
     expect(authentication.getState()).toEqual({
       status: "ready",
-      mode: "iam",
       currentUser: null,
     });
     expect(authentication.isSessionPresent()).toBe(false);
@@ -396,14 +326,7 @@ describe("iam mode", () => {
     expect(requestsTo("GET", "/me")).toHaveLength(1);
   });
 
-  it("sends cookies and no Authorization header, keeps nothing in browser storage and never loads the legacy libraries", async () => {
-    const evaluatedLegacyLibraries: string[] = [];
-    legacyLibraryNames.forEach((libraryName) =>
-      vi.doMock(libraryName, () => {
-        evaluatedLegacyLibraries.push(libraryName);
-        return {};
-      })
-    );
+  it("sends cookies and no Authorization header, and keeps nothing in browser storage", async () => {
     const storageWrite = vi.spyOn(Storage.prototype, "setItem");
 
     const { authentication, receivedRequests, releaseRefresh } =
@@ -421,14 +344,13 @@ describe("iam mode", () => {
     receivedRequests.forEach((request) => {
       expect(request.authorizationHeader).toBeUndefined();
     });
-    receivedRequests
-      .filter((request) => request.path !== "/auth/config")
-      .forEach((request) => expect(request.withCredentials).toBe(true));
+    receivedRequests.forEach((request) =>
+      expect(request.withCredentials).toBe(true)
+    );
     expect(storageWrite).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
     expect(document.cookie).toBe("");
-    expect(evaluatedLegacyLibraries).toEqual([]);
   });
 
   it("follows a role changed at the IAM: reads the user again after a refresh and publishes it", async () => {
@@ -436,8 +358,6 @@ describe("iam mode", () => {
     let roleAtTheIam = 1;
     const { authentication, requestsTo, goToExternalUrl } =
       await loadAuthentication((request) => {
-        if (request.path === "/auth/config")
-          return { status: 200, data: { mode: "iam" } };
         if (request.path === "/auth/refresh") {
           accessTokenIsValid = true;
           return { status: 204 };
@@ -501,9 +421,9 @@ describe("iam mode", () => {
     expect(failing.goToExternalUrl).not.toHaveBeenCalled();
   });
 
-  it("removes what a legacy session left in the browser, and nothing else", async () => {
-    localStorage.setItem("@secure.s.access_token", "legacy-access-token");
-    localStorage.setItem("@secure.s.refresh_token", "legacy-refresh-token");
+  it("removes what the old sign-in left in the browser, and nothing else", async () => {
+    localStorage.setItem("@secure.s.access_token", "old-access-token");
+    localStorage.setItem("@secure.s.refresh_token", "old-refresh-token");
     localStorage.setItem("layout-theme", "light");
     document.cookie = "login=true; path=/";
     document.cookie = "language=en; path=/";
@@ -556,11 +476,7 @@ describe("iam mode", () => {
   describe("sign in with another account, after a refused sign-in", () => {
     /** Nobody is signed in to the application; the IAM may still know the refused account. */
     const loadSignedOutIamAuthentication = async () => {
-      const loaded = await loadAuthentication((request) => {
-        if (request.path === "/auth/config")
-          return { status: 200, data: { mode: "iam" } };
-        return { status: 401 };
-      });
+      const loaded = await loadAuthentication(() => ({ status: 401 }));
       await loaded.authentication.initialize();
       expect(loaded.authentication.getState()).toMatchObject({
         status: "ready",
@@ -612,25 +528,17 @@ describe("iam mode", () => {
     });
   });
 
-  it("never sends create user, delete user or change role: those belong to the VTK IAM console", async () => {
-    const { requestsTo, receivedRequests, releaseRefresh } =
-      await loadSignedInIamAuthentication({ refreshStatus: 204 });
-    releaseRefresh();
-    const { createUser, deleteUser, changeRoleUser, editUser } = await import(
-      "../services/userService"
+  it("offers only editing a user: creating, deleting and roles belong to the VTK IAM console", async () => {
+    const { requestsTo, releaseRefresh } = await loadSignedInIamAuthentication(
+      { refreshStatus: 204 }
     );
+    releaseRefresh();
+    const userService = await import("../services/userService");
     const person = { id: "12", name: "Person", email: "person@example.test" };
-    const requestCountBefore = receivedRequests.length;
 
-    expect(await deleteUser("12")).toBe(false);
-    expect(await createUser({ ...person, password: "secret" })).toBe(false);
-    expect(await changeRoleUser({ ...person, role: 0 })).toBe(false);
+    expect(Object.keys(userService).sort()).toEqual(["editUser", "getUser"]);
 
-    expect(receivedRequests).toHaveLength(requestCountBefore);
-    expect(requestsTo("DELETE", "/user")).toHaveLength(0);
-
-    // Editing a user stays available
-    await editUser(person);
+    await userService.editUser(person);
     expect(requestsTo("PUT", "/user").length).toBeGreaterThan(0);
   });
 
@@ -656,151 +564,5 @@ describe("iam mode", () => {
     expect(authentication.getCurrentUser()).toMatchObject(signedInAdmin);
     showPage(true);
     expect(reloadPage).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("legacy mode", () => {
-  const firstRefreshToken = createLegacyRefreshToken({
-    name: "Normal Person",
-    email: "person@example.test",
-    role: 0,
-  });
-  const secondRefreshToken = createLegacyRefreshToken({
-    name: "Normal Person",
-    email: "person@example.test",
-    role: 1,
-  });
-
-  const legacyBackend: FakeBackend = (request) => {
-    if (request.path === "/auth/config")
-      return { status: 200, data: { mode: "legacy" } };
-    if (request.path === "/login") {
-      return {
-        status: 200,
-        data: {
-          access_token: "first-access-token",
-          refresh_token: firstRefreshToken,
-        },
-      };
-    }
-    if (request.path === "/refresh-token") {
-      return request.authorizationHeader === `Bearer ${firstRefreshToken}`
-        ? {
-            status: 200,
-            data: {
-              access_token: "second-access-token",
-              refresh_token: secondRefreshToken,
-            },
-          }
-        : { status: 401 };
-    }
-    return request.authorizationHeader === "Bearer second-access-token"
-      ? { status: 200, data: { path: request.path } }
-      : { status: 401, data: { message: "expired" } };
-  };
-
-  const loadSignedInLegacyAuthentication = async () => {
-    const loaded = await loadAuthentication(legacyBackend);
-    await loaded.authentication.initialize();
-    const { signInWithPassword } = await import(
-      "./legacyAuthenticationProvider"
-    );
-    expect(
-      await signInWithPassword("person@example.test", "password", false)
-    ).toBe(true);
-    return loaded;
-  };
-
-  it("keeps the session where it was: the login cookie and the tokens in secure storage", async () => {
-    const { authentication } = await loadSignedInLegacyAuthentication();
-
-    expect(document.cookie).toContain("login=true");
-    expect(localStorage.length).toBeGreaterThan(0);
-    expect(authentication.getState().currentUser).toEqual({
-      name: "Normal Person",
-      email: "person@example.test",
-      role: 0,
-    });
-    expect(authentication.isAdmin()).toBe(false);
-    expect(authentication.isSessionPresent()).toBe(true);
-  });
-
-  it("reads the signed-in user back from the stored refresh token on the next page load", async () => {
-    await loadSignedInLegacyAuthentication();
-
-    const { authentication } = await loadAuthentication(legacyBackend);
-    await authentication.initialize();
-
-    expect(authentication.getState().currentUser?.email).toBe(
-      "person@example.test"
-    );
-  });
-
-  it("attaches the bearer access token and refreshes the old way on a 401", async () => {
-    const { authentication, requestsTo } =
-      await loadSignedInLegacyAuthentication();
-
-    const response = await authentication.apiClient.get(`${apiBaseUrl}/task`);
-
-    expect(response.data.path).toBe("/task");
-    const taskRequests = requestsTo("GET", "/task");
-    expect(
-      taskRequests.map((request) => request.authorizationHeader)
-    ).toEqual(["Bearer first-access-token", "Bearer second-access-token"]);
-    expect(taskRequests[0].withCredentials).toBe(false);
-    const refreshRequests = requestsTo("GET", "/refresh-token");
-    expect(refreshRequests).toHaveLength(1);
-    expect(refreshRequests[0].authorizationHeader).toBe(
-      `Bearer ${firstRefreshToken}`
-    );
-    expect(requestsTo("POST", "/auth/refresh")).toHaveLength(0);
-    // The renewed refresh token carries the new role
-    expect(authentication.getState().currentUser?.role).toBe(1);
-  });
-
-  it("signs out by clearing the browser session and showing the login form", async () => {
-    const { authentication, goToFrontendPath, goToExternalUrl, requestsTo } =
-      await loadSignedInLegacyAuthentication();
-
-    await authentication.signOut();
-
-    expect(document.cookie).not.toContain("login=");
-    expect(localStorage.length).toBe(0);
-    expect(authentication.getState().currentUser).toBeNull();
-    expect(authentication.isSessionPresent()).toBe(false);
-    expect(goToFrontendPath).toHaveBeenCalledWith("/auth/login");
-    expect(goToExternalUrl).not.toHaveBeenCalled();
-    expect(requestsTo("POST", "/auth/logout")).toHaveLength(0);
-  });
-
-  it("still deletes, creates and changes the role of users in this application", async () => {
-    const { requestsTo } = await loadSignedInLegacyAuthentication();
-    const { createUser, deleteUser, changeRoleUser } = await import(
-      "../services/userService"
-    );
-    const person = { id: "12", name: "Person", email: "person@example.test" };
-
-    expect(await deleteUser("12")).toBeTruthy();
-    expect(await createUser({ ...person, password: "secret" })).toBeTruthy();
-    expect(await changeRoleUser({ ...person, role: 0 })).toBeTruthy();
-
-    const deleteRequests = requestsTo("DELETE", "/user");
-    expect(deleteRequests.length).toBeGreaterThan(0);
-    expect(
-      deleteRequests[deleteRequests.length - 1].authorizationHeader
-    ).toBe("Bearer second-access-token");
-    expect(requestsTo("POST", "/user")).toHaveLength(1);
-    expect(requestsTo("PUT", "/user/changerole")).toHaveLength(1);
-  });
-
-  it("sends a person who wants another account to the login form, without calling the backend", async () => {
-    const { authentication, goToFrontendPath, goToExternalUrl, requestsTo } =
-      await loadSignedInLegacyAuthentication();
-
-    await authentication.signInWithAnotherAccount();
-
-    expect(goToFrontendPath).toHaveBeenCalledWith("/auth/login");
-    expect(goToExternalUrl).not.toHaveBeenCalled();
-    expect(requestsTo("POST", "/auth/logout")).toHaveLength(0);
   });
 });

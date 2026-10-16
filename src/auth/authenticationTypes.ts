@@ -1,11 +1,8 @@
 import { AxiosInstance } from "axios";
 
-export type AuthenticationMode = "legacy" | "iam";
-
 export type AuthenticationStatus = "loading" | "ready" | "unavailable";
 
 export interface ICurrentUser {
-  /** Only the IAM mode knows the id; the legacy token does not carry it. */
   id?: string | number;
   name: string;
   email: string;
@@ -15,11 +12,10 @@ export interface ICurrentUser {
 
 export interface IAuthenticationState {
   status: AuthenticationStatus;
-  mode: AuthenticationMode | null;
   currentUser: ICurrentUser | null;
 }
 
-/** What the authentication module hands to the provider of the active mode. */
+/** What the authentication module hands to the provider. */
 export interface IAuthenticationProviderContext {
   apiClient: AxiosInstance;
   getCurrentUser: () => ICurrentUser | null;
@@ -27,16 +23,9 @@ export interface IAuthenticationProviderContext {
 }
 
 /**
- * The same small interface for both modes. Pages talk to the authentication
- * module, the module talks to the provider of the mode the backend announced.
+ * Pages talk to the authentication module, the module talks to this provider.
  */
 export interface IAuthenticationProvider {
-  readonly mode: AuthenticationMode;
-  /**
-   * true when this application creates accounts and changes roles itself
-   * (legacy). false when the VTK IAM console does it (iam).
-   */
-  readonly supportsLocalAccountManagement: boolean;
   /** Resolves null when nobody is signed in, rejects when it cannot tell. */
   loadCurrentUser: () => Promise<ICurrentUser | null>;
   isSessionPresent: () => boolean;

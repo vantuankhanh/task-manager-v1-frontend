@@ -38,7 +38,7 @@ const selectSignInFailureMessage = (
 };
 
 /**
- * /auth/access in iam mode: the backend sends the browser here when the
+ * /auth/access: the backend sends the browser here when the
  * sign-in at VTK IAM failed. It is a public page: it shows for a visitor
  * without a session and never starts a sign-in by itself.
  */

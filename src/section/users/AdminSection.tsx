@@ -2,22 +2,16 @@ import { DataView } from "primereact/dataview";
 import { Message } from "primereact/message";
 import { useEffect, useState } from "react";
 import { useAppDispatch } from "../../store/store";
-import { useAuthentication } from "../../hooks/use-authentication";
 import { IUserModel } from "../../models/UserModel";
 import { setLoading } from "../../store/reducer/reducer";
 import { getAPI } from "../../services/apiFunction";
 import DataViewListItem from "./DataViewListItem";
 import DataViewGridItem from "./DataViewGridItem";
 import DialogCreateUpdateUser from "./DialogCreateUpdateUser";
-import DialogDeleteUser from "./DialogDeleteUser";
-import DialogChangeRole from "./DialogChangeRole";
 import DataViewHeader from "./DataViewHeader";
 
 const AdminSection = () => {
   const dispatch = useAppDispatch();
-  // false in iam mode: accounts and roles are managed in the VTK IAM console
-  const { supportsLocalAccountManagement } = useAuthentication();
-
   const [userList, setUserList] = useState<IUserModel[]>([]);
   const [userListFilter, setUserListFilter] = useState<IUserModel[] | null>(
     null
@@ -62,35 +56,17 @@ const AdminSection = () => {
 
     if (layout === "list") {
       return (
-        <DataViewListItem
-          data={data}
-          onEditClick={onEditClick(data)}
-          onDeleteClick={() => setIdDelete(data.id!)}
-          onChangeRole={() => setUserChangeRole(data)}
-          canChangeRole={supportsLocalAccountManagement}
-          canDeleteUser={supportsLocalAccountManagement}
-        />
+        <DataViewListItem data={data} onEditClick={onEditClick(data)} />
       );
     } else if (layout === "grid") {
       return (
-        <DataViewGridItem
-          data={data}
-          onEditClick={onEditClick(data)}
-          onDeleteClick={() => setIdDelete(data.id!)}
-          onChangeRole={() => setUserChangeRole(data)}
-          canChangeRole={supportsLocalAccountManagement}
-          canDeleteUser={supportsLocalAccountManagement}
-        />
+        <DataViewGridItem data={data} onEditClick={onEditClick(data)} />
       );
     }
   };
 
   const [openEdit, setOpenEdit] = useState(false);
   const [itemEdit, setItemEdit] = useState<IUserModel | null>(null);
-
-  const [idDelete, setIdDelete] = useState<string | null>(null);
-
-  const [userChangeRole, setUserChangeRole] = useState<IUserModel | null>(null);
 
   return (
     <div className="card">
@@ -102,27 +78,11 @@ const AdminSection = () => {
         getAllUser={getAllUser}
       />
 
-      {supportsLocalAccountManagement ? (
-        <>
-          <DialogDeleteUser
-            idDelete={idDelete}
-            setIdDelete={setIdDelete}
-            getAllUser={getAllUser}
-          />
-
-          <DialogChangeRole
-            item={userChangeRole}
-            setItem={setUserChangeRole}
-            getAllUser={getAllUser}
-          />
-        </>
-      ) : (
-        <Message
-          severity="info"
-          className="w-full justify-content-start mb-3"
-          text="New accounts and roles are managed in the VTK IAM console. Removing a person's access is done there too."
-        />
-      )}
+      <Message
+        severity="info"
+        className="w-full justify-content-start mb-3"
+        text="New accounts and roles are managed in the VTK IAM console. Removing a person's access is done there too."
+      />
 
       <DataView
         value={userListFilter || userList}
@@ -141,8 +101,6 @@ const AdminSection = () => {
             setSortField={setSortField}
             setSortOrder={setSortOrder}
             setUserListFilter={setUserListFilter}
-            onCreateClick={onEditClick(null)}
-            canCreateUser={supportsLocalAccountManagement}
           />
         }
       ></DataView>

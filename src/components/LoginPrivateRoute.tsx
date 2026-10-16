@@ -25,7 +25,7 @@ const LoginPrivateRoute = ({ children }: ILoginPrivateRouteProps) => {
 
   useEffect(() => {
     if (mustSignIn) {
-      // iam: the VTK IAM sign-in, then back to requestedPath. legacy: the login form.
+      // The VTK IAM sign-in, then back to requestedPath.
       signIn(requestedPath);
     }
   }, [mustSignIn, requestedPath, signIn]);

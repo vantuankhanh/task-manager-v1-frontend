@@ -6,19 +6,11 @@ import "../../style/ribbon.scss";
 interface IDataViewGridItemProps {
   data: IUserModel;
   onEditClick: MouseEventHandler<HTMLButtonElement>;
-  onDeleteClick: MouseEventHandler<HTMLButtonElement>;
-  onChangeRole: MouseEventHandler<HTMLButtonElement>;
-  canChangeRole: boolean;
-  canDeleteUser: boolean;
 }
 
 const DataViewGridItem = ({
   data,
   onEditClick,
-  onDeleteClick,
-  onChangeRole,
-  canChangeRole,
-  canDeleteUser,
 }: IDataViewGridItemProps) => {
   return (
     <div className="col-12 lg:col-4 relative">
@@ -39,14 +31,7 @@ const DataViewGridItem = ({
           <div className="mb-4">{data.email}</div>
 
           <div className="flex gap-3">
-            <ActionButton
-              onEditClick={onEditClick}
-              onDeleteClick={onDeleteClick}
-              role={data.role!}
-              onChangeRole={onChangeRole}
-              canChangeRole={canChangeRole}
-              canDeleteUser={canDeleteUser}
-            />
+            <ActionButton onEditClick={onEditClick} />
           </div>
         </div>
       </div>

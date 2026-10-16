@@ -1,8 +1,5 @@
-import axios from "axios";
 import { apiClient } from "./apiClient";
-import { authenticationEndpoints } from "./authenticationEndpoints";
 import {
-  AuthenticationMode,
   IAuthenticationProvider,
   IAuthenticationProviderContext,
   IAuthenticationState,
@@ -12,17 +9,15 @@ import { browserNavigation } from "./browserNavigation";
 import { createIamAuthenticationProvider } from "./iamAuthenticationProvider";
 
 /**
- * The authentication module. The backend says at runtime which mode is on
- * (GET /api/auth/config), this module picks the provider of that mode and
- * everything else in the application uses the interface below, whatever the
- * mode: current user, isAdmin, signIn, signOut and the axios instance.
+ * The authentication module. VTK IAM signs people in, through the backend;
+ * everything else in the application uses the interface below: current user,
+ * isAdmin, signIn, signOut and the axios instance.
  */
 
 type AuthenticationStateListener = () => void;
 
 let authenticationState: IAuthenticationState = {
   status: "loading",
-  mode: null,
   currentUser: null,
 };
 const authenticationStateListeners = new Set<AuthenticationStateListener>();
@@ -41,50 +36,11 @@ const providerContext: IAuthenticationProviderContext = {
     updateAuthenticationState({ currentUser }),
 };
 
-const fetchAuthenticationMode = async (): Promise<AuthenticationMode> => {
-  try {
-    const response = await axios.get(
-      authenticationEndpoints.authenticationConfiguration(),
-      { timeout: 5000 }
-    );
-    const announcedMode = response.data?.mode;
-    if (announcedMode === "legacy" || announcedMode === "iam") {
-      return announcedMode;
-    }
-    throw new Error("The authentication configuration names an unknown mode");
-  } catch (error) {
-    // A backend from before the dual mode has no such route: it is a legacy backend.
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return "legacy";
-    }
-    throw error;
-  }
-};
-
-const createProviderForMode = async (mode: AuthenticationMode) => {
-  if (mode === "iam") {
-    return createIamAuthenticationProvider(providerContext);
-  }
-  // Dynamic import: react-secure-storage, jwt-decode and js-cookie stay out of iam mode.
-  const { createLegacyAuthenticationProvider } = await import(
-    "./legacyAuthenticationProvider"
-  );
-  return createLegacyAuthenticationProvider(providerContext);
-};
-
 const runInitialization = async () => {
   try {
-    if (!activeProvider) {
-      activeProvider = await createProviderForMode(
-        await fetchAuthenticationMode()
-      );
-    }
+    activeProvider ??= createIamAuthenticationProvider(providerContext);
     const currentUser = await activeProvider.loadCurrentUser();
-    updateAuthenticationState({
-      status: "ready",
-      mode: activeProvider.mode,
-      currentUser,
-    });
+    updateAuthenticationState({ status: "ready", currentUser });
   } catch {
     updateAuthenticationState({ status: "unavailable" });
   }
@@ -103,10 +59,10 @@ const reloadWhenRestoredFromHistoryCache = (event: PageTransitionEvent) => {
 };
 
 export const authentication = {
-  /** The axios instance of every service, with the interceptors of the active mode. */
+  /** The axios instance of every service, with the interceptors of the IAM sign-in. */
   apiClient,
 
-  /** Asks the backend for the mode, then for the current user. Runs once per page load. */
+  /** Asks the backend for the current user. Runs once per page load. */
   initialize: () => {
     if (!initializationInFlight) {
       window.addEventListener("pageshow", reloadWhenRestoredFromHistoryCache);
@@ -135,19 +91,11 @@ export const authentication = {
 
   isAdmin: () => authenticationState.currentUser?.role === 1,
 
-  /** Also re-checks what the mode keeps in the browser (legacy), so a lapsed session is noticed. */
   isSessionPresent: () =>
     authenticationState.currentUser !== null &&
     (activeProvider?.isSessionPresent() ?? false),
 
-  /** false in iam mode: accounts and roles are managed in the VTK IAM console. */
-  supportsLocalAccountManagement: () =>
-    activeProvider?.supportsLocalAccountManagement ?? false,
-
-  /**
-   * iam: full-page navigation to the backend sign-in, back to returnToPath.
-   * legacy: the login form of this application.
-   */
+  /** Full-page navigation to the backend sign-in, back to returnToPath. */
   signIn: (returnToPath: string = browserNavigation.currentFrontendPath()) => {
     activeProvider?.signIn(returnToPath);
   },
