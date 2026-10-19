@@ -1,0 +1,6 @@
+allowBuilds:
+  # Optional dependency of sass for its CLI watch mode. Its install script
+  # only compiles from source when npm_config_build_from_source is set; the
+  # prebuilt binary comes from its platform optional dependency.
+  '@parcel/watcher': false
+  esbuild: true
