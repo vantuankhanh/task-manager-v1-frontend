@@ -36,12 +36,18 @@ VTK IAM signs people in, through the backend:
 | On a 401 | `POST /auth/refresh` once (shared by concurrent requests), then one retry; a 401 from the refresh goes to the sign-in, a 503 shows an error |
 | Current user | `GET /me` (`{ id, name, email, role }`), fetched on page load and again after every session refresh, so a role changed in the VTK IAM console reaches the menu and the pages without a reload (at most one access token lifetime later) |
 | Sign out | `POST /auth/logout`, then the browser goes to the `redirectUrl` of the answer; the IAM sends it back to `/auth/login`, which shows the sign-in button and never goes to the IAM by itself |
-| Failed sign-in | The backend sends the browser to `/auth/access?reason=access_denied` (the account has no role in this application) or `/auth/access?reason=sign_in_failed` (anything else). The page is public, shows a fixed message per reason (never text of the address bar) and offers "Try again" and "Sign in with another account" (full-page navigation to `{VITE_BASE_URL}/auth/login?returnTo=/&prompt=login`, so the IAM shows its sign-in form instead of reusing the refused account) |
+| Failed sign-in | The backend sends the browser to `/auth/access?reason=access_denied` (the account has no role in this application) or `/auth/access?reason=sign_in_failed` (anything else). `access_denied` also covers a person who declined the personal data notice of this application at VTK IAM. The page is public, shows a fixed message per reason (never text of the address bar) and offers "Try again" and "Sign in with another account", and for `access_denied` also "Read the notice" (`/privacy`) (full-page navigation to `{VITE_BASE_URL}/auth/login?returnTo=/&prompt=login`, so the IAM shows its sign-in form instead of reusing the refused account) |
 | Create user, signup, change role, delete user | Managed in the VTK IAM console. Editing a user stays here |
 
 The code is in `src/auth`: `authentication.ts` is the one interface the pages use (current user, isAdmin, signIn, signOut, the axios instance), `iamAuthenticationProvider.ts` implements it. A failure to load the current user shows a "Sign-in is unavailable" page with a retry button.
 
 The sign-in this application did itself (the login and signup forms, the tokens in react-secure-storage, the `GET /api/auth/config` mode switch) was removed in milestone M9 of VTK IAM, on 2026-10-16.
+
+### Personal data notice
+
+`/privacy` is the public notice of this application (ADR-020 of VTK IAM, FR-AUTHZ-10): Vietnamese by default, `?lang=en` for English, with a five-line summary, the data, purposes, recipients, retention and anonymization particular to Task Manager, and a link to the notice of VTK IAM for the shared parts (rights, requests, contact). It needs no session. The footer, the account menu of the top bar and the sign-in page link to it. Text: `src/pages/privacy/privacyNoticeText.ts`; version: `privacyNoticeVersion` in `src/pages/privacy/privacyNoticeLocation.ts` (now `2026-11-22`).
+
+To change it: edit the text and bump the version in the same change, deploy, and only then set the same version for `taskmanager-v1` in the VTK IAM console; VTK IAM then asks everyone to accept it again. Every sentence must stay true of the backend (its tables, routes and the anonymization in `src/utils/iamAccountDeletion.js`).
 
 ### Build-time environment
 
