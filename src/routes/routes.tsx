@@ -1,8 +1,10 @@
 import { lazy } from "react";
 import { Navigate, Outlet, useRoutes } from "react-router-dom";
+import AuthenticationGate from "../components/AuthenticationGate";
 import LoginPrivateRoute from "../components/LoginPrivateRoute";
 import LayoutFull from "../layout/full-page/layout-full-page";
 import LayoutMain from "../layout/main/layout-main";
+import { privacyNoticePath } from "../pages/privacy/privacyNoticeLocation";
 
 /* -----------------------------AUTH--------------------------------- */
 
@@ -11,6 +13,7 @@ const IamSignIn = lazy(() => import("../pages/auth/IamSignIn"));
 const IamSignInFailed = lazy(() => import("../pages/auth/IamSignInFailed"));
 const Logout = lazy(() => import("../pages/auth/Logout"));
 const NotFound = lazy(() => import("../pages/auth/NotFound"));
+const PrivacyNotice = lazy(() => import("../pages/privacy/PrivacyNotice"));
 
 /* ----------------------------PAGE--------------------------------- */
 
@@ -21,7 +24,7 @@ const Dashboard = lazy(() => import("../pages/dashboard"));
 
 /* ------------------------------------------------------------------ */
 
-const Router = () => {
+const GatedRouter = () => {
   // One button to VTK IAM, where accounts are created too.
   const signInRoutes = [
     { path: "login", element: <IamSignIn /> },
@@ -74,5 +77,30 @@ const Router = () => {
 
   return routes;
 };
+
+/**
+ * The notice is matched before the authentication gate, so it renders even
+ * when the API is down and makes no /me or /auth/refresh call (ADR-020 of VTK
+ * IAM section 1). Every other path goes through the gate as before.
+ */
+const Router = () =>
+  useRoutes([
+    {
+      path: privacyNoticePath,
+      element: (
+        <LayoutFull>
+          <PrivacyNotice />
+        </LayoutFull>
+      ),
+    },
+    {
+      path: "*",
+      element: (
+        <AuthenticationGate>
+          <GatedRouter />
+        </AuthenticationGate>
+      ),
+    },
+  ]);
 
 export default Router;

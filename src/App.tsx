@@ -1,5 +1,4 @@
 import { ToastContainer } from "react-toastify";
-import AuthenticationGate from "./components/AuthenticationGate";
 import Loading from "./components/Loading/Loading";
 import useScrollToTop from "./hooks/use-scroll-to-top";
 import Router from "./routes/routes";
@@ -9,9 +8,8 @@ const App = () => {
 
   return (
     <>
-      <AuthenticationGate>
-        <Router />
-      </AuthenticationGate>
+      {/* The authentication gate sits inside Router, so /privacy renders without it (ADR-020 of VTK IAM). */}
+      <Router />
       <ToastContainer
         position="top-right"
         autoClose={2000}
