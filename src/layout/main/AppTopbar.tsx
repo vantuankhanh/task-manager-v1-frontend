@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { useUser } from "../../hooks/use-users";
+import { privacyNoticePath } from "../../pages/privacy/privacyNoticeLocation";
 import { AppTopbarRef } from "../../types";
 import { LayoutContext } from "../context/layoutcontext";
 
@@ -54,6 +55,12 @@ const AppTopbar = forwardRef<AppTopbarRef>((_props, ref) => {
   const menuRef = useRef<Menu>(null);
   const menuItems: MenuItem[] = useMemo(
     () => [
+      // The notice of this application belongs in the account menu (ADR-020 of VTK IAM).
+      {
+        label: "Privacy notice",
+        icon: "pi pi-shield",
+        command: () => nav(privacyNoticePath),
+      },
       {
         label: "Logout",
         icon: "pi pi-sign-out",
@@ -136,6 +143,17 @@ const AppTopbar = forwardRef<AppTopbarRef>((_props, ref) => {
             hidden: !layoutState.profileSidebarVisible,
           })}
         />
+
+        <button
+          type="button"
+          className={classNames("p-link layout-topbar-button", {
+            hidden: !layoutState.profileSidebarVisible,
+          })}
+          onClick={() => nav(privacyNoticePath)}
+        >
+          <i className="pi pi-shield"></i>
+          <span>Privacy notice</span>
+        </button>
 
         <button
           type="button"

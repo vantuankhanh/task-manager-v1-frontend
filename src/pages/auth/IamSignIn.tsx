@@ -1,9 +1,10 @@
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { classNames } from "primereact/utils";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { hasSignInAttemptMarker } from "../../auth/signInAttemptMarker";
 import { useAuthentication } from "../../hooks/use-authentication";
+import { privacyNoticePath } from "../privacy/privacyNoticeLocation";
 
 /**
  * The login route in iam mode: no form and no password here, the sign-in
@@ -55,6 +56,14 @@ const IamSignIn = () => {
               className="w-full md:w-30rem p-3 text-xl border-round-3xl"
               onClick={() => signIn("/")}
             />
+
+            {/* The signed-out pages have no footer, so the notice of this
+                application is linked here too (ADR-020 of VTK IAM). */}
+            <div className="text-center mt-4">
+              <Link to={privacyNoticePath} className="text-primary text-sm">
+                Privacy notice
+              </Link>
+            </div>
           </div>
         </div>
       </div>
