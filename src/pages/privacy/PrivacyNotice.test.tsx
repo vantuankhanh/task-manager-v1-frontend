@@ -149,6 +149,17 @@ describe("/privacy", () => {
     expect(iamLink?.getAttribute("rel")).toBe("noopener");
   });
 
+  it("links the English page to the English notice of VTK IAM", async () => {
+    await renderAt("/privacy?lang=en", <PrivacyNotice />);
+
+    const iamLink = Array.from(container.querySelectorAll("a")).find(
+      (anchor) =>
+        anchor.getAttribute("href") ===
+        "https://auth.vantuankhanh.com/privacy?lang=en"
+    );
+    expect(iamLink).toBeDefined();
+  });
+
   it("switches the language through ?lang in both directions", async () => {
     await renderAt("/privacy", <PrivacyNotice />);
     expect(

@@ -127,7 +127,11 @@ const PrivacyNotice = () => {
             {text.sharedPartsText}
           </p>
           <a
-            href={iamPrivacyNoticeUrl}
+            href={
+              language === "en"
+                ? `${iamPrivacyNoticeUrl}?lang=en`
+                : iamPrivacyNoticeUrl
+            }
             className="text-primary font-medium"
             rel="noopener"
           >
