@@ -89,10 +89,10 @@ const vietnameseText: IPrivacyNoticeText = {
         "Công việc: email của người được giao, dự án, thời gian bắt đầu và kết thúc, trạng thái, và ghi chú tự do tối đa 200 ký tự.",
         "Dự án: tên, số tiền thanh toán, thời gian bắt đầu và kết thúc, mức ưu tiên, và ghi chú tối đa 200 ký tự. Dự án không gắn với một người cụ thể.",
         "Phiên đã kết thúc: khi phiên đăng nhập VTK IAM của bạn kết thúc (đăng xuất, tài khoản bị khóa, đổi mật khẩu), ứng dụng ghi mã phiên và mã tài khoản để từ chối các token của phiên đó; các dòng này được xóa khi VTK IAM báo một lần đăng xuất sau đó.",
-        "Nhật ký máy chủ: phương thức và đường dẫn của từng yêu cầu (đường dẫn có thể chứa email, ví dụ khi xem công việc của một người), các lỗi, và mã tài khoản VTK IAM trong một số dòng. Nhật ký không ghi địa chỉ IP.",
+        "Nhật ký máy chủ: nhật ký của ứng dụng ghi phương thức và đường dẫn của từng yêu cầu (với đường dẫn có chứa email hoặc tên, chẳng hạn khi xem công việc của một người, chỉ ghi mẫu đường dẫn, ví dụ /api/gettaskbyuser/:name, không ghi email hay tên), các lỗi, và mã tài khoản VTK IAM trong một số dòng. Nhật ký của ứng dụng không ghi địa chỉ IP; nhật ký truy cập của máy chủ web nginx thì ghi địa chỉ IP, thời điểm, đường dẫn (không kèm tham số, nhưng có thể chứa email hoặc tên như ví dụ trên) và trình duyệt của từng yêu cầu.",
       ],
       paragraphs: [
-        "Ứng dụng không lưu mật khẩu, số điện thoại, ảnh, ngày sinh hay địa chỉ IP trong cơ sở dữ liệu, và không cho tải tệp lên. Địa chỉ IP chỉ nằm trong bộ đếm giới hạn số yêu cầu, trong bộ nhớ của máy chủ và trong một khoảng ngắn, và không được ghi vào nhật ký. Nội dung bạn gõ vào ghi chú được lưu nguyên văn, nên đừng ghi vào đó dữ liệu cá nhân không cần cho công việc.",
+        "Ứng dụng không lưu mật khẩu, số điện thoại, ảnh, ngày sinh hay địa chỉ IP trong cơ sở dữ liệu, và không cho tải tệp lên. Ứng dụng giữ địa chỉ IP chỉ trong bộ đếm giới hạn số yêu cầu, trong bộ nhớ của máy chủ và trong một khoảng ngắn, và không ghi nó vào nhật ký của ứng dụng; chỉ nhật ký truy cập của nginx ghi địa chỉ IP, như nêu ở mục nhật ký máy chủ. Nội dung bạn gõ vào ghi chú được lưu nguyên văn, nên đừng ghi vào đó dữ liệu cá nhân không cần cho công việc.",
       ],
     },
     {
@@ -128,6 +128,7 @@ const vietnameseText: IPrivacyNoticeText = {
         "Khi nhận được thông báo, ứng dụng thay họ tên của bạn bằng \"Deleted account\", thay email bằng một địa chỉ giữ chỗ không thuộc về ai, đặt vai trò về người dùng thường, bỏ liên kết với tài khoản và phiên VTK IAM, và xóa các dòng phiên đã kết thúc của bạn. Các công việc giao cho bạn chuyển sang địa chỉ giữ chỗ đó.",
         "Công việc, dự án và ghi chú được giữ lại để quản trị viên còn lịch sử công việc của dự án. Ghi chú tự do không bị sửa, nên có thể còn nhắc tới bạn; muốn xóa phần đó, hãy nhờ quản trị viên sửa ghi chú, hoặc gửi yêu cầu theo thông báo của VTK IAM.",
         "Nếu sau đó bạn đồng ý lại và đăng nhập, ứng dụng tạo cho bạn một tài khoản mới; dữ liệu cũ đã ẩn danh không được nối lại với bạn.",
+        "Nhật ký máy chủ: nhật ký của ứng dụng và nhật ký truy cập của máy chủ web nginx được giữ tối đa 14 ngày rồi tự xóa.",
         "Bản sao lưu: tạo mỗi đêm và mã hóa; 7 bản gần nhất được giữ trên máy chủ, và mỗi bản được giữ 14 ngày trên Cloudflare R2, vị trí lưu do Cloudflare chọn. Dữ liệu trước khi ẩn danh vì vậy có thể còn trong bản sao lưu tới 15 ngày.",
       ],
     },
@@ -196,10 +197,10 @@ const englishText: IPrivacyNoticeText = {
         "Tasks: the email of the person assigned, the project, start and end times, status, and a free-text note of up to 200 characters.",
         "Projects: name, payment amount, start and end times, priority, and a note of up to 200 characters. A project is not tied to one person.",
         "Ended sessions: when your VTK IAM sign-in session ends (sign-out, a locked account, a changed password), the application records the session id and your account id, to refuse the tokens of that session; these rows are removed when a later sign-out report arrives from VTK IAM.",
-        "Server logs: the method and path of each request (a path can contain an email, for example when the tasks of one person are shown), errors, and your VTK IAM account id in some lines. The logs do not record IP addresses.",
+        "Server logs: the application's log records the method and path of each request (for a path that contains an email or a name, for example when the tasks of one person are shown, only the path pattern is written, such as /api/gettaskbyuser/:name, never the email or name), errors, and your VTK IAM account id in some lines. The application's log records no IP address; the access log of the nginx web server does record the IP address, time, path (without its parameters, but it can contain an email or a name as in the example above) and browser of each request.",
       ],
       paragraphs: [
-        "The application keeps no password, phone number, photo, date of birth or IP address in its database, and has no file upload. The IP address is held only in an in-memory rate-limit counter for a short window and is not written to the logs. What you type into a note is kept as written, so do not put personal data there that the work does not need.",
+        "The application keeps no password, phone number, photo, date of birth or IP address in its database, and has no file upload. The application holds the IP address only in an in-memory rate-limit counter for a short window and does not write it to its own logs; only the nginx access log records IP addresses, as the server logs line above says. What you type into a note is kept as written, so do not put personal data there that the work does not need.",
       ],
     },
     {
@@ -235,6 +236,7 @@ const englishText: IPrivacyNoticeText = {
         "On that notice the application replaces your name with \"Deleted account\" and your email with a placeholder address that belongs to nobody, sets your role back to user, removes the link to your VTK IAM account and session, and deletes your ended-session rows. The tasks assigned to you move to that placeholder address.",
         "Tasks, projects and notes are kept, so the administrators keep the history of the work of each project. Free-text notes are not changed, so they may still mention you; to have that removed, ask an administrator to edit the note, or send a request as the VTK IAM notice describes.",
         "If you later accept again and sign in, the application creates a new account for you; the old, anonymized data is not linked to you again.",
+        "Server logs: the application's logs and the access logs of the nginx web server are kept for at most 14 days and then deleted automatically.",
         "Backups: made every night and encrypted; the 7 newest are kept on the server, and each is kept for 14 days on Cloudflare R2, at a location Cloudflare chooses. Data from before the anonymization can therefore remain in a backup for up to 15 days.",
       ],
     },
