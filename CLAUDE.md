@@ -1,6 +1,6 @@
 # CLAUDE.md – Task Manager v1 frontend (task-manager-v1-frontend)
 
-Cập nhật lần cuối: 2026-11-23 (ADR-020 của VTK IAM: trang công khai `/privacy` nằm ngoài `AuthenticationGate` nên đọc được cả khi API ngừng, liên kết ở chân trang, menu tài khoản và trang đăng nhập, nút "Read the notice" ở `/auth/access?reason=access_denied`, thêm test; chưa commit).
+Cập nhật lần cuối: 2026-11-23 (D49 (c) của VTK IAM xong trong working tree, chưa commit: trang `/privacy` sửa dòng nhật ký máy chủ (chỉ ghi mẫu đường dẫn, nhật ký ứng dụng không ghi IP, nginx có ghi IP) và thêm mục giữ nhật ký tối đa 14 ngày, phiên bản `2026-11-22` giữ nguyên vì chưa triển khai; trước đó: ADR-020 của VTK IAM: trang công khai `/privacy` nằm ngoài `AuthenticationGate` nên đọc được cả khi API ngừng, liên kết ở chân trang, menu tài khoản và trang đăng nhập, nút "Read the notice" ở `/auth/access?reason=access_denied`, thêm test; chưa commit).
 
 ## 1. Quy tắc
 
